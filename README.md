@@ -1,2 +1,2 @@
-# atea-staff
-ATEA Staff — платформа для сотрудников
+# atea-TEAM
+ATEA TEAM — платформа для сотрудников
