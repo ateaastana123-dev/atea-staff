@@ -134,7 +134,7 @@ function backendRequest(data){
   let finished=false;
   function finish(err,result){if(finished)return;finished=true;clearTimeout(timer);window.removeEventListener('message',receive);form.remove();setTimeout(()=>frame.remove(),100);if(err)reject(err);else resolve(result)}
   function receive(ev){
-    if(ev.source!==frame.contentWindow||!/^https:\/\/(script\.google\.com|[a-z0-9.-]*googleusercontent\.com)$/.test(ev.origin))return;
+    if(!/^https:\/\/(script\.google\.com|[a-z0-9.-]*googleusercontent\.com)$/.test(ev.origin))return;
     const m=ev.data;if(!m||m.channel!=='atea-team-v1'||m.nonce!==nonce)return;
     finish(null,m.result);
   }
