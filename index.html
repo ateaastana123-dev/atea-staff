@@ -59,26 +59,69 @@ function checkQuiz(){const ans=academyQuestions.map((q,i)=>document.querySelecto
 // Uploads are compressed in the browser before sending. They are never stored in localStorage.
 let managerPin='';
 const pendingPhotos={};
-const OPENING_CHECKS=[
- 'Отметка начала смены в iiko — до 09:30. Снимите экран с временем отметки',
- 'Форма чистая и выглаженная, волосы собраны, бейдж с именем надет',
- 'Входная группа и вывеска чистые, готовы к открытию',
- 'Зал подготовлен: столы, стулья, пол и гостевые зоны чистые; все лампы и споты горят',
- 'Бар, стойка и рабочие поверхности чистые и готовы к работе',
- 'Оборудование исправно, температура холодильников проверена',
- 'Ингредиенты, упаковка, маркировка и сроки годности проверены',
- 'Касса, стоп-лист и витрина подготовлены к работе'
-];
-const CLOSING_CHECKS=[
- 'Все заказы завершены, касса и оплаты сверены',
- 'Бар, стойка, оборудование и рабочие поверхности убраны',
- 'Остатки и заготовки проверены, сроки и маркировка актуальны',
- 'Списания и расхождения зафиксированы',
- 'Зал и входная группа убраны, мусор вынесен',
- 'Оборудование выключено согласно инструкции, смена в iiko закрыта',
- 'Проблемы и задачи следующей смены переданы управляющему'
-];
-const SHIFT_CHECKS={opening:OPENING_CHECKS,closing:CLOSING_CHECKS};
+// Four independent checklists. Role is selected by the employee before completing a shift.
+const ROLE_CHECKS={
+ cashier:{
+  opening:[
+   'Отметка начала смены в iiko — до 09:30. Снимите экран с временем отметки',
+   'Форма чистая и выглаженная, волосы собраны, бейдж с именем надет',
+   'Входная группа и вывеска чистые, готовы к открытию',
+   'Зал подготовлен: столы, стулья, пол и гостевые зоны чистые; все лампы и споты горят',
+   'Уборные чистые: сантехника, пол, бумага, мыло и урны проверены; освещение работает',
+   'Касса включена, iiko работает',
+   'Разменные деньги проверены',
+   'Терминалы Kaspi и Halyk включены и работают (фото обоих терминалов)',
+   'Планшеты Wolt / Glovo / Yandex проверены',
+   'Холодильная витрина работает; фото термометра',
+   'Морозильная витрина работает; фото термометра',
+   'Витрина, меню и кассовая стойка чистые и готовы к работе',
+   'Салфетки, трубочки, приборы и расходники пополнены'
+  ],
+  closing:[
+   'Все заказы закрыты в iiko; время завершения смены зафиксировано',
+   'Касса и наличные сверены; расхождения отражены',
+   'Терминалы Kaspi и Halyk проверены, сверка выполнена',
+   'Заказы Wolt / Glovo / Yandex завершены, возвраты проверены',
+   'Стоп-лист и остатки на следующий день переданы',
+   'Списания и возвраты зафиксированы',
+   'Витрина, меню, кассовая стойка и гостевая зона убраны',
+   'Размен и документы переданы следующей смене',
+   'Касса закрыта по инструкции; фото экрана iiko',
+   'Проблемы смены переданы управляющему'
+  ]
+ },
+ barista:{
+  opening:[
+   'Отметка начала смены в iiko, прибытие к 10:30 — фото времени отметки',
+   'Форма чистая и выглаженная, волосы собраны, бейдж с именем надет',
+   'Стаканы на начало смены пересчитаны',
+   'Включены бабл-кукер, шейкеры, типресc, бойлеры, аппарат для стаканов, принтер, аппарат для жаб-стаканов и блендер',
+   'Заготовки приготовлены и промаркированы',
+   'Тапиока: наличие, срок годности и маркировка',
+   'Подготовлены чаи: Assam, Jasmine, Peach Oolong, Four Seasons, медовый. Сроки годности и маркировка проверены',
+   'Проверены миксы: Butterfly, Dragon (фиолетовый/красный), Thai, Sakura, Matcha',
+   'Фруктовые нарезки: лимон, лайм, апельсин, мята, манго и клубника зам., малина и вишня зам.',
+   'Джемы, бобы, соки, пудры, сахар и стаканы пополнены; маркировки проставлены',
+   'Ингредиентов достаточно на текущий день',
+   'ПФ: срок годности и маркировка проверены',
+   'Рабочая зона бариста чистая, поверхности и оборудование подготовлены'
+  ],
+  closing:[
+   'Заготовки и ингредиенты убраны на хранение, сроки и маркировка проверены',
+   'Тапиока и чаи проверены, остатки и списания зафиксированы',
+   'Миксы, нарезки, джемы и бобы убраны по стандарту',
+   'Блендеры, шейкеры, инвентарь и аппарат для стаканов вымыты',
+   'Бабл-кукер и бойлеры очищены и выключены по инструкции',
+   'Холодильное оборудование и условия хранения проверены',
+   'Рабочие поверхности, раковина и пол в зоне бара вымыты',
+   'Стаканы, расходники и ингредиенты пересчитаны для передачи смены',
+   'Отходы вынесены, мусорные ёмкости очищены',
+   'Неисправности оборудования и недостачи переданы управляющему'
+  ]
+ }
+};
+function checklistRole(){const r=getLocal(storageKey('checkrole'),'cashier');return ROLE_CHECKS[r]?r:'cashier'}
+function checklistItems(){return ROLE_CHECKS[checklistRole()][getLocal(storageKey('checktype'),'opening')]}
 function backendReady(){return /^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(BACKEND_URL)}
 function backendRequest(data){
  return new Promise((resolve,reject)=>{
@@ -99,9 +142,9 @@ function backendRequest(data){
  });
 }
 function renderChecklist(){
- const type=getLocal(storageKey('checktype'),'opening');const items=SHIFT_CHECKS[type];
+ const type=getLocal(storageKey('checktype'),'opening');const role=checklistRole();const items=checklistItems();
  $('content').innerHTML=`<h2>Чек-лист смены</h2><p class="muted">${safe(user.branch)} · ${safe(user.name)}. Для каждого пункта обязательны отметка и фотография. После отправки отчёт сохраняется в Google Таблице и Drive; управляющему поступает уведомление в Telegram.</p>
- <label class="field">Этап смены</label><div class="shift-switch"><button class="${type==='opening'?'on':''}" onclick="changeCheckType('opening')">☀ Открытие смены</button><button class="${type==='closing'?'on':''}" onclick="changeCheckType('closing')">☾ Закрытие смены</button></div>
+ <label class="field">Должность сотрудника</label><div class="shift-switch"><button class="${role==='cashier'?'on':''}" onclick="changeCheckRole('cashier')">Кассир</button><button class="${role==='barista'?'on':''}" onclick="changeCheckRole('barista')">Бариста</button></div><label class="field">Этап смены</label><div class="shift-switch"><button class="${type==='opening'?'on':''}" onclick="changeCheckType('opening')">☀ Открытие смены</button><button class="${type==='closing'?'on':''}" onclick="changeCheckType('closing')">☾ Закрытие смены</button></div>
  <div class="info">Дата и время отправки автоматически фиксируются на сервере. Время в iiko подтверждается фотографией экрана.</div>
  <div class="check-rows">${items.map((t,i)=>`<div class="check-row"><div class="check-num">${i+1}</div><div class="check-body"><b>${safe(t)}</b><label class="check-label"><input type="checkbox" id="done${i}" onchange="updateCheckProgress()"> Проверено, выполнено</label><button type="button" class="secondary" onclick="openChecklistCamera(${i})">📷 Сделать фото</button><div class="muted" id="photoState${i}">Фото ещё не сделано</div><img id="photoPreview${i}" alt="Фото проверки" style="display:none;max-width:170px;border-radius:12px;margin-top:8px"></div></div>`).join('')}</div>
  <label class="field">Комментарий / проблема смены</label><textarea class="control" id="checkNote" rows="3" maxlength="1000" placeholder="Если есть проблемы, опишите их"></textarea>
@@ -109,8 +152,9 @@ function renderChecklist(){
  <div id="cameraPanel" style="display:none;padding:12px;border:1px solid #eee;border-radius:14px;margin:12px 0"><p id="cameraTitle"></p><video id="cameraVideo" autoplay playsinline muted style="width:100%;max-height:420px;background:#111;border-radius:12px"></video><div class="row" style="margin-top:10px"><button type="button" class="primary" onclick="takeChecklistPhoto()">Сфотографировать</button><button type="button" class="secondary" onclick="closeChecklistCamera()">Отмена</button></div></div><p id="checkProgress" class="muted"></p><button class="primary wide" id="submitCheckBtn" onclick="submitChecklist()">Отправить отчёт управляющему</button><p id="checkStatus" role="status" class="muted"></p>`;
  updateCheckProgress();
 }
+function changeCheckRole(r){if(!ROLE_CHECKS[r])return;closeChecklistCamera();checkPhotos={};saveLocal(storageKey('checkrole'),r);renderChecklist()}
 function changeCheckType(t){closeChecklistCamera();checkPhotos={};saveLocal(storageKey('checktype'),t);renderChecklist()}
-function updateCheckProgress(){const items=SHIFT_CHECKS[getLocal(storageKey('checktype'),'opening')];const count=items.filter((_,i)=>$('done'+i).checked).length;$('checkProgress').textContent=`Отмечено ${count} из ${items.length}. Фото обязательны для каждого пункта.`}
+function updateCheckProgress(){const items=checklistItems();const count=items.filter((_,i)=>$('done'+i).checked).length;$('checkProgress').textContent=`Отмечено ${count} из ${items.length}. Фото обязательны для каждого пункта.`}
 let checkPhotos={}, cameraStream=null, cameraIndex=-1;
 async function openChecklistCamera(i){
  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){alert('Камера недоступна. Откройте ATEA TEAM через Safari или Chrome по HTTPS и разрешите доступ к камере.');return}
@@ -126,7 +170,7 @@ function takeChecklistPhoto(){
  const data=canvas.toDataURL('image/jpeg',.65);checkPhotos[i]=data.split(',')[1];$('photoState'+i).textContent='Фото сделано камерой';$('photoPreview'+i).src=data;$('photoPreview'+i).style.display='block';closeChecklistCamera();
 }
 async function submitChecklist(){
- const type=getLocal(storageKey('checktype'),'opening'),items=SHIFT_CHECKS[type];
+ const type=getLocal(storageKey('checktype'),'opening'),role=checklistRole(),items=checklistItems();
  const status=$('checkStatus'),button=$('submitCheckBtn');status.textContent='';
  for(let i=0;i<items.length;i++){if(!$('done'+i).checked){status.textContent=`Пункт ${i+1} не отмечен.`;return}if(!checkPhotos[i]){status.textContent=`Для пункта ${i+1} требуется фото.`;return}}
  button.disabled=true;status.textContent='Подготавливаем фотографии…';
@@ -136,7 +180,7 @@ async function submitChecklist(){
    const base64=checkPhotos[i];photos.push({item:i+1,name:`${type}_${i+1}.jpg`,mime:'image/jpeg',base64});
   }
   status.textContent='Загружаем отчёт и фотографии в Google Drive…';
-  const r=await backendRequest({action:'submit',employee:user.name,branch:user.branch,shift:type,items,checks:items.map(()=>true),photos,note:$('checkNote').value.trim()});
+  const r=await backendRequest({action:'submit',employee:user.name,branch:user.branch,role,shift:type,items,checks:items.map(()=>true),photos,note:$('checkNote').value.trim()});
   if(!r.ok)throw Error(r.error||'Сервер не принял отчёт');
   status.textContent=`Отчёт №${r.id} сохранён в Google Таблице. ${r.telegramSent?'Уведомление отправлено в Telegram.':'Telegram не подтвердил доставку; управляющий увидит отчёт в приложении.'}`;
   button.textContent='Отчёт отправлен';button.disabled=true;
@@ -151,7 +195,7 @@ async function renderInbox(){
 async function loadInbox(){const el=$('inboxResults');if(!el)return;el.textContent='Загружаем отчёты…';try{
  const r=await backendRequest({action:'list',pin:managerPin,branch:$('inboxBranch').value});if(!r.ok)throw Error(r.error||'Нет доступа');
  if($('financeInbox'))loadFinanceInbox();
- el.innerHTML=r.rows.length?r.rows.map(x=>`<article class="report-entry"><div class="row"><b>№${safe(x.id)} · ${safe(x.branch)}</b><span class="tag">${x.shift==='opening'?'Открытие':'Закрытие'}</span></div><p>${safe(x.date)} · ${safe(x.employee)}</p><p>Проверено: ${safe(x.completed)} / ${safe(x.total)} · Фото: ${safe(x.photos.length)}</p>${x.note?`<p>${safe(x.note)}</p>`:''}<details><summary>Ссылки на фотографии</summary><div class="photo-links">${x.photos.map((u,i)=>`<a href="${safe(u)}" target="_blank" rel="noopener noreferrer">Фото ${i+1} ↗</a>`).join('')}</div></details></article>`).join(''):'<p class="empty">Отчётов пока нет.</p>';
+ el.innerHTML=r.rows.length?r.rows.map(x=>`<article class="report-entry"><div class="row"><b>№${safe(x.id)} · ${safe(x.branch)}</b><span class="tag">${x.role==='barista'?'Бариста':x.role==='cashier'?'Кассир':'Не указано'} · ${x.shift==='opening'?'Открытие':'Закрытие'}</span></div><p>${safe(x.date)} · ${safe(x.employee)}</p><p>Проверено: ${safe(x.completed)} / ${safe(x.total)} · Фото: ${safe(x.photos.length)}</p>${x.note?`<p>${safe(x.note)}</p>`:''}<details><summary>Ссылки на фотографии</summary><div class="photo-links">${x.photos.map((u,i)=>`<a href="${safe(u)}" target="_blank" rel="noopener noreferrer">Фото ${i+1} ↗</a>`).join('')}</div></details></article>`).join(''):'<p class="empty">Отчётов пока нет.</p>';
  }catch(e){el.textContent='Не удалось загрузить: '+e.message}}
 async function loadFinanceInbox(){const el=$('financeInbox');if(!el||!managerPin)return;try{const r=await backendRequest({action:'financeList',pin:managerPin,branch:$('inboxBranch')?.value||'all'});if(!r.ok)throw Error(r.error||'Ошибка');el.innerHTML=r.rows.length?r.rows.map(x=>`<article class="report-entry"><b>${safe(x.date)} · ${safe(x.branch)}</b><p>${safe(x.employee)} · Сотрудники: ${safe(x.employees)}</p><p>План: ${safe(x.plan)} ₸ · Факт: ${safe(x.fact)} ₸ · Чеки: ${safe(x.checks)}</p><p>Отклонение: ${safe(x.deviation)} ₸ · Средний чек: ${safe(x.average)} ₸</p><details><summary>Все сведения</summary>${Object.entries(x).filter(([k])=>!['id','branch','date'].includes(k)).map(([k,v])=>`<p>${safe(k)}: ${safe(v)}</p>`).join('')}</details></article>`).join(''):'<p class="empty">Финансовых отчётов пока нет.</p>'}catch(e){el.textContent='Не удалось загрузить: '+e.message}}
 const FIN_FIELDS=[['rPlan','План, ₸'],['rFact','Выручка (факт), ₸'],['rCash','Наличные, ₸'],['rCard','Безнал, ₸'],['rBonus','Оплата бонусами, ₸'],['rDelivery','Доставки (Glovo / Yandex / Wolt), ₸'],['rChecks','Количество чеков'],['rWrite','Списания, ₸']];
